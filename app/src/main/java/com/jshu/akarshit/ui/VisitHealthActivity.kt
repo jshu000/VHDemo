@@ -9,9 +9,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,10 +50,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,7 +61,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.lerp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -67,8 +69,8 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.jshu.akarshit.R
 import com.jshu.akarshit.ui.theme.AkarshitTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
 
 
 @AndroidEntryPoint
@@ -86,6 +88,71 @@ class VisitHealthActivity : ComponentActivity() {
         }
     }
 }
+@Composable
+//@Preview(showBackground = true)
+fun ImageTopEndToCenter(
+    animate: Boolean = false,
+    onAnimate: () -> Unit = {},
+    nextPageImage: Int?,
+    pageIndex: Int,
+    currentImage: Int,
+) {
+
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val imageSizeStart = 40.dp
+    val imageSizeEnd = screenWidth
+
+    var showNextImage by remember { mutableStateOf(false) }
+
+
+    var animate by remember(pageIndex) { mutableStateOf(false) }
+
+    val imageSize by animateDpAsState(
+        targetValue = if (animate) imageSizeEnd else imageSizeStart,
+        animationSpec = tween(700, easing = FastOutSlowInEasing),
+        label = "imageSize"
+    )
+
+    LaunchedEffect(pageIndex) {
+        animate = false
+        delay(50) // tiny delay so Compose sees a state change
+        animate = true
+    }
+    LaunchedEffect(nextPageImage) {
+        showNextImage = false
+        if (nextPageImage != null) {
+            delay(100)
+            showNextImage = true
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        currentImage?.let { imageRes ->
+            Image(
+                painter = painterResource(currentImage),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(imageSize)
+            )
+        }
+        if (showNextImage && nextPageImage != null) {
+            Image(
+                painter = painterResource(nextPageImage),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(40.dp)
+            )
+        }
+
+    }
+}
+
+
+
 
 
 
@@ -169,124 +236,6 @@ val onboardingPages = listOf(
 )
 
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AnimatedOnboardingPage(
-    page: OnboardingPage,
-    pageOffset: Float,
-    currentPage: Int
-) {
-    val scale = lerp(
-        start = 0.85f,
-        stop = 1f,
-        fraction = 1f - pageOffset.coerceIn(0f, 1f)
-    )
-
-    val alpha = lerp(
-        start = 0.5f,
-        stop = 1f,
-        fraction = 1f - pageOffset.coerceIn(0f, 1f)
-    )
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ){
-        val nextPageImage =
-            if (currentPage < onboardingPages.lastIndex)
-                onboardingPages[currentPage + 1].image
-            else
-                null
-
-
-        GlideImage(
-            model = nextPageImage,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end =16.dp)
-                .size(53.dp)
-        )
-
-        GlideImage(
-            model = R.drawable.star_gif,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .size(53.dp)
-        )
-        GlideImage(
-            model = R.drawable.bg_for_top_3__1_,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(bottom = 150.dp)
-                .size(380.dp)
-
-        )
-
-        // ⭐ Right star
-        GlideImage(
-            model = R.drawable.star_gif,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 150.dp)
-                .size(53.dp)
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    this.alpha = alpha
-                },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-
-            Image(
-                painter = painterResource(page.image),
-                contentDescription = null,
-                modifier = Modifier
-                    .height(320.dp)
-                    .fillMaxWidth(),
-                contentScale = ContentScale.Fit
-            )
-
-            Spacer(
-                modifier = Modifier.weight(0.9f)
-            )
-
-            Text(
-                text = page.title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight(600),
-                color = Color.White,
-                lineHeight = 24.sp,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = page.description,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight(500),
-                color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-            Spacer(Modifier.height(16.dp))
-
-        }
-    }
-}
 
 @Composable
 fun AnimatedPagerIndicator(
@@ -320,7 +269,6 @@ fun AnimatedPagerIndicator(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = false)
 @Composable
 fun StepAthonOnboarding(
@@ -337,95 +285,244 @@ fun StepAthonOnboarding(
         }
     }
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
+    var playNextImageAnim by remember { mutableStateOf(false) }
+
+    val scaleAnim = remember { Animatable(0.3f) }
+    val offsetXAnim = remember { Animatable(0f) }
+    val offsetYAnim = remember { Animatable(0f) }
+    val alphaAnim = remember { Animatable(1f) }
+    var nextIconOffset by remember { mutableStateOf(Offset.Zero) }
+    var rootSize by remember { mutableStateOf(IntSize.Zero) }
+    var targetImageOffset by remember { mutableStateOf(Offset.Zero) }
+    var animate by remember { mutableStateOf(false) }
 
 
-    Box(
+
+
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .onSizeChanged() { boxSize = it }
-            .background(
-                brush = Brush.linearGradient(
-                    colors = onboardingPages[currentPage].gradientColors,
-                    start = Offset.Zero, // top-left corner
-                    end = Offset(
-                        x = boxSize.width / 2f,
-                        y = boxSize.height / 2f
-                    )
-                )
-            )
     ) {
 
-        // 🔙 Back button
-        BackButton(
-            visible = currentPage > 0,
-            onClick = {
-                scope.launch {
-                    pagerState.animateScrollToPage(currentPage - 1)
-                }
-            }
-        )
+        // 🔝 Status bar (fixed height)
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 31.dp, bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = modifier
+                .weight(1f)           // 🔥 THIS FIXES IT
+                .fillMaxWidth()
+                .onSizeChanged { rootSize = it }
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = onboardingPages[currentPage].gradientColors,
+                        start = Offset.Zero, // top-left corner
+                        end = Offset(
+                            x = boxSize.width / 2f,
+                            y = boxSize.height / 2f
+                        )
+                    )
+                )
         ) {
 
-            Spacer(Modifier.height(24.dp))
-            CurvedTitleText(
-                text = "Step-a-thon",
-                modifier = Modifier.padding(top = 16.dp)
-            )
 
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f)
-            ) { page ->
-                val pageOffset =
-                    ((pagerState.currentPage - page) +
-                            pagerState.currentPageOffsetFraction).absoluteValue
 
-                AnimatedOnboardingPage(
-                    page = onboardingPages[page],
-                    pageOffset = pageOffset,
-                    currentPage = currentPage
-                )
-            }
 
-            AnimatedPagerIndicator(
-                pageCount = onboardingPages.size,
-                currentPage = currentPage
-            )
 
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    scope.launch {
-                        if (currentPage == onboardingPages.lastIndex) {
-                            onFinish()
-                        } else {
-                            pagerState.animateScrollToPage(currentPage + 1)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 0.dp, bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                StatusBar(
+                    showBack = currentPage > 0,
+                    onBackClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(currentPage - 1)
                         }
                     }
-                },
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .padding(horizontal = 32.dp)
-                    .height(56.dp)
-                    .fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
                 )
-            ) {
-                Text(
-                    text = if (currentPage ==
-                        onboardingPages.lastIndex) "Let’s Go" else "Next",
-                    color = Color.Black,
-                    fontWeight = FontWeight.SemiBold
+
+                Spacer(Modifier.height(24.dp))
+                CurvedTitleText(
+                    text = "Step-a-thon",
+                    modifier = Modifier.padding(top = 16.dp)
                 )
+
+
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    val page = onboardingPages[page]
+                    val currentPage = currentPage
+                    val nextPageImage =
+                        if (currentPage < onboardingPages.lastIndex)
+                            onboardingPages[currentPage + 1].image
+                        else
+                            null
+
+
+
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ){
+                        Box(modifier = Modifier.height(350.dp)
+                            .fillMaxWidth()
+                        ){
+
+                            ImageTopEndToCenter(
+                                animate,
+                                nextPageImage = nextPageImage,
+                                pageIndex = currentPage,
+                                currentImage = onboardingPages[currentPage].image
+                            )
+                        }
+
+
+                        
+
+                        GlideImage(
+                            model = R.drawable.star_gif,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                                .size(53.dp)
+                        )
+                        GlideImage(
+                            model = R.drawable.bg_for_top_3__1_,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(bottom = 150.dp)
+                                .size(380.dp)
+
+                        )
+
+                        // ⭐ Right star
+                        GlideImage(
+                            model = R.drawable.star_gif,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 16.dp, bottom = 150.dp)
+                                .size(53.dp)
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                ,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+
+                            Spacer(
+                                modifier = Modifier.weight(0.9f)
+                            )
+
+                            Text(
+                                text = page.title,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight(600),
+                                color = Color.White,
+                                lineHeight = 24.sp,
+                                textAlign = TextAlign.Center,
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                text = page.description,
+                                fontSize = 14.sp,
+                                lineHeight = 18.sp,
+                                fontWeight = FontWeight(500),
+                                color = Color.White.copy(alpha = 0.8f),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 32.dp)
+                            )
+                            Spacer(Modifier.height(16.dp))
+
+                        }
+                    }
+
+                }
+
+                AnimatedPagerIndicator(
+                    pageCount = onboardingPages.size,
+                    currentPage = currentPage
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        animate = true
+                        scope.launch {
+                            if (currentPage == onboardingPages.lastIndex) {
+                                onFinish()
+                                return@launch
+                            }
+
+                            playNextImageAnim = true
+
+                            val startX = nextIconOffset.x
+                            val startY = nextIconOffset.y
+
+                            val endX = targetImageOffset.x
+                            val endY = targetImageOffset.y
+
+
+                            offsetXAnim.snapTo(startX)
+                            offsetYAnim.snapTo(startY)
+                            scaleAnim.snapTo(0.25f)
+
+                            launch {
+                                offsetXAnim.animateTo(
+                                    endX,
+                                    tween(600, easing = FastOutSlowInEasing)
+                                )
+                            }
+                            launch {
+                                offsetYAnim.animateTo(
+                                    endY,
+                                    tween(600, easing = FastOutSlowInEasing)
+                                )
+                            }
+                            launch {
+                                scaleAnim.animateTo(
+                                    1f,
+                                    tween(600, easing = FastOutSlowInEasing)
+                                )
+                            }
+
+
+                            delay(400)
+
+                            pagerState.scrollToPage(currentPage + 1)
+
+                            playNextImageAnim = false
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .height(56.dp)
+                        .fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = if (currentPage ==
+                            onboardingPages.lastIndex) "Let’s Go" else "Next",
+                        color = Color.Black,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
@@ -503,6 +600,31 @@ fun CurvedTitleText(
                 0f,
                 paint
             )
+        }
+    }
+}
+@Composable
+fun StatusBar(
+    showBack: Boolean,
+    onBackClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .height(56.dp)              // 👈 standard app bar height
+            ,
+        contentAlignment = Alignment.CenterStart
+    ) {
+        if (showBack) {
+            IconButton(onClick = onBackClick,
+                modifier = Modifier) {
+                Icon(
+                    painter = painterResource(id = R.drawable.back),
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
         }
     }
 }

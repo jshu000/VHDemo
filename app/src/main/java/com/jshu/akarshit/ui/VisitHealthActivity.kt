@@ -466,45 +466,8 @@ fun StepAthonOnboarding(
                                 onFinish()
                                 return@launch
                             }
-
-                            playNextImageAnim = true
-
-                            val startX = nextIconOffset.x
-                            val startY = nextIconOffset.y
-
-                            val endX = targetImageOffset.x
-                            val endY = targetImageOffset.y
-
-
-                            offsetXAnim.snapTo(startX)
-                            offsetYAnim.snapTo(startY)
-                            scaleAnim.snapTo(0.25f)
-
-                            launch {
-                                offsetXAnim.animateTo(
-                                    endX,
-                                    tween(600, easing = FastOutSlowInEasing)
-                                )
-                            }
-                            launch {
-                                offsetYAnim.animateTo(
-                                    endY,
-                                    tween(600, easing = FastOutSlowInEasing)
-                                )
-                            }
-                            launch {
-                                scaleAnim.animateTo(
-                                    1f,
-                                    tween(600, easing = FastOutSlowInEasing)
-                                )
-                            }
-
-
                             delay(400)
-
                             pagerState.scrollToPage(currentPage + 1)
-
-                            playNextImageAnim = false
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
@@ -524,29 +487,6 @@ fun StepAthonOnboarding(
                     )
                 }
             }
-        }
-    }
-}
-
-
-
-
-@Composable
-fun BackButton(
-    visible: Boolean,
-    onClick: () -> Unit
-) {
-    if (visible) {
-        IconButton (
-            onClick = onClick,
-            modifier = Modifier.padding(start = 12.dp),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back",
-                tint = Color.White,
-                modifier = Modifier
-            )
         }
     }
 }

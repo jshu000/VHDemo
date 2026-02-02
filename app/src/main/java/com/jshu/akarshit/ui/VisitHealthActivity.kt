@@ -91,8 +91,6 @@ class VisitHealthActivity : ComponentActivity() {
 @Composable
 //@Preview(showBackground = true)
 fun ImageTopEndToCenter(
-    animate: Boolean = false,
-    onAnimate: () -> Unit = {},
     nextPageImage: Int?,
     pageIndex: Int,
     currentImage: Int,
@@ -285,16 +283,6 @@ fun StepAthonOnboarding(
         }
     }
     var boxSize by remember { mutableStateOf(IntSize.Zero) }
-    var playNextImageAnim by remember { mutableStateOf(false) }
-
-    val scaleAnim = remember { Animatable(0.3f) }
-    val offsetXAnim = remember { Animatable(0f) }
-    val offsetYAnim = remember { Animatable(0f) }
-    val alphaAnim = remember { Animatable(1f) }
-    var nextIconOffset by remember { mutableStateOf(Offset.Zero) }
-    var rootSize by remember { mutableStateOf(IntSize.Zero) }
-    var targetImageOffset by remember { mutableStateOf(Offset.Zero) }
-    var animate by remember { mutableStateOf(false) }
 
 
 
@@ -310,7 +298,6 @@ fun StepAthonOnboarding(
             modifier = modifier
                 .weight(1f)           // 🔥 THIS FIXES IT
                 .fillMaxWidth()
-                .onSizeChanged { rootSize = it }
                 .background(
                     brush = Brush.linearGradient(
                         colors = onboardingPages[currentPage].gradientColors,
@@ -373,7 +360,6 @@ fun StepAthonOnboarding(
                         ){
 
                             ImageTopEndToCenter(
-                                animate,
                                 nextPageImage = nextPageImage,
                                 pageIndex = currentPage,
                                 currentImage = onboardingPages[currentPage].image
@@ -460,7 +446,6 @@ fun StepAthonOnboarding(
 
                 Button(
                     onClick = {
-                        animate = true
                         scope.launch {
                             if (currentPage == onboardingPages.lastIndex) {
                                 onFinish()

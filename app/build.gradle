@@ -22,15 +22,6 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    signingConfigs {
-
-        release {
-            storeFile file("release.jks")
-            storePassword "12341234"
-            keyAlias "key0"
-            keyPassword "12341234"
-        }
-    }
 
 
 
@@ -49,11 +40,10 @@ android {
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
             )
-            signingConfig signingConfigs.release
         }
 
     }
-    flavorDimensions "environment", "pricing", "language"
+    flavorDimensions "environment"
     productFlavors {
         staging {
             dimension "environment"
@@ -67,26 +57,6 @@ android {
             dimension "environment"
             buildConfigField "String", "BASE_URL",
                     "\"https://api.example.com/\""
-        }
-
-        // 💰 PRICING
-        free {
-            dimension "pricing"
-            applicationIdSuffix ".free"
-        }
-
-        paid {
-            dimension "pricing"
-            applicationIdSuffix ".paid"
-        }
-
-        // 🌍 LANGUAGE
-        english {
-            dimension "language"
-        }
-
-        turkish {
-            dimension "language"
         }
     }
     compileOptions {
